@@ -12,13 +12,13 @@ version = "0.1.0"
 python = "*"
 hvplot = "*"
 ipython = "*"
-ipywidgets = "*"
+ipywidgets = ">=8.1.5,<9"
 jupyter_client = "*"
 jupyter_core = "*"
-jupyterlab = "*"
+jupyterlab = ">=4.3.6,<5"
 pandas = "*"
 patsy = "*"
-pip = "*"
+pip = ">=25.0.1,<26"
 polars = "*"
 pyarrow = "*"
 pymc = "*"
@@ -37,6 +37,6 @@ jupyter_bokeh = ">=4.0.5,<5"
 plotly = ">=6.0.1,<7"
 
 [pypi-dependencies]
-jax = { version = "*", extras = ["cpu"] }
+# jax = "*" # removed this bc it was causing issues with jax.numpy
 numpyro = { version = "*", extras = ["cpu"] }
 pymc-extras = ">=0.2.3, <0.3"

@@ -1,0 +1,141 @@
+% !TEX root = pathfinder-minibatch.tex
+\documentclass{article}
+
+\usepackage[ruled]{algorithm2e}
+% \usepackage{algpseudocode}  % Add this line
+\usepackage{amsmath}
+\usepackage[margin=1in]{geometry}  % Add this to preamble
+\usepackage{xcolor}  % Add this to preamble
+\usepackage[normalem]{ulem}  % Add this to preamble
+
+% \SetAlgoNoLine
+% \SetAlgoNoEnd
+% \SetNlSty{}{}{:}
+\SetInd{1em}{2em}
+
+% Increase indentation for Input, Result and Procedure content
+\SetKwInput{KwInput}{Input}
+\SetKwInput{KwResult}{Result}
+
+\newlength{\myindent}
+\setlength{\myindent}{1.5em}
+\newcommand{\indentinput}{\hspace*{\myindent}}
+
+% Configure algorithm2e layout
+\SetAlgoVlined       % Shows vertical lines for blocks
+\SetNlSty{}{}{:}     % Style for line numbers
+\SetStartEndCondition{ }{}{}
+\SetKwProg{Input}{Input}{:}{}
+\SetKwProg{Result}{Result}{:}{}
+
+
+% \begin{document}
+% \SetKwProg{Fn}{Pathfinder$(\log p, \pi_0, L, \tau^{\text{rel}}, J, K, M)$}{:}{}
+% \begin{algorithm}
+% \DontPrintSemicolon
+% \SetAlgoLined
+% \LinesNotNumbered
+% \caption{Single-path Pathfinder}
+% \KwIn{}
+%     \indentinput $\log p$: differentiable log target density function of dimension $N$\;
+%     \indentinput $\pi_0$: initial distribution\;
+%     \indentinput $L^{\text{max}}$: maximum number of L-BFGS iterations\;
+%     \indentinput $\tau^{\text{rel}}$: relative tolerance for convergence of L-BFGS\;
+%     \indentinput $J$: size of the history used to approximate the inverse Hessian\;
+%     \indentinput $K$: number of Monte Carlo draws to evaluate ELBO\;
+%     \indentinput $M$: number of approximate posterior draws to return\;
+
+% \KwOut{}{
+%     \indentinput $\psi^{(1)},\ldots,\psi^{(M)}$: draws from ELBO-maximizing normal approximation\;
+%     \indentinput $\log q(\psi^{(1)}),\ldots,\log q(\psi^{(M)})$: log density of draws in ELBO-maximizing normal approximation \;
+% }
+% \SetKwProg{Proc}{Pathfinder$(\log p, \pi_0, L, \tau^{\text{rel}}, J, K, M)$}{:}{}
+
+% \nl \Fn{}{
+%     \nl sample $\theta^{(0)} \sim \pi_0$ \;
+%     \nl $\theta^{(0:L)}, \nabla \log p(\theta^{(0:L)}) = \text{L-BFGS}(\log p, \theta^{(0)}, J, \tau^{\text{rel}}, L^{\text{max}})$\;
+%     \nl $\alpha^{(1:L)}, \xi^{(1:L)}, s^{(1:L)}, z^{(1:L)} = \alpha\text{-RECOVER}(\theta^{(0:L)}, \nabla \log p(\theta^{(0:L)}), J)$\;
+%     \nl \For{$l \in 1:L$ \textbf{in parallel } }{
+%         \nl $\phi^{(l,1:K)}, \log q(\phi^{(l,1:K)}) = \text{BFGS-SAMPLE}(s^{(1:l)}, z^{(1:l)}, \theta^{(l)}, \nabla \log p(\theta^{(l)}), \alpha^{(l)}, \xi^{(1:l)}, K)$\;
+%         \nl \For{$k \in 1:K$}{ 
+%             \nl eval $\log p(\phi^{(l,k)})$ \;
+%         }
+%         \nl $\lambda^{(l)} = \text{ELBO}(\log p(\phi^{(l,1:K)}), \log q(\phi^{(l,1:K)}))$\;
+%     }
+%     \nl $l^* = \arg \max_l \lambda^{(l)}$\;
+%     \nl $\psi^{(1:M)}, \log q(\psi^{(1:M)}) = \text{BFGS-SAMPLE}(s^{(1:l^*)}, z^{(1:l^*)}, \theta^{(l^*)}, \nabla \log p(\theta^{(l^*)}), \alpha^{(l^*)}, \xi^{(1:l^*)}, M)$\;
+% }
+% \end{algorithm}
+% \end{document}
+
+\begin{document}
+\SetKwProg{Fn}{Pathfinder$(\log p, \pi_0, L, \tau^{\text{rel}}, J, K, M)$}{:}{}
+\begin{algorithm}
+\DontPrintSemicolon
+\SetAlgoLined
+\LinesNotNumbered
+\caption{Single-path Pathfinder}
+\KwIn{}
+    \indentinput $\log p$: log target density function\;
+    \indentinput $\pi_0$: initial distribution\;
+    \indentinput $L^{\text{max}}$: max number of L-BFGS iterations\;
+    \indentinput $\tau^{\text{rel}}$: relative tolerance for convergence of L-BFGS\;
+    \indentinput $J$: history size for L-BFGS and inverse Hessian approximation\;
+    \indentinput $K$: number of Monte Carlo draws to evaluate ELBO\;
+    \indentinput $M$: number of approximate posterior draws to return\;
+
+\KwOut{}{
+    \indentinput $\psi^{(1)},\ldots,\psi^{(M)}$: draws from ELBO-maximizing normal approximation\;
+    \indentinput $\log q(\psi^{(1)}),\ldots,\log q(\psi^{(M)})$: log density of draws in ELBO-maximizing normal approximation \;
+}
+\SetKwProg{Proc}{Pathfinder$(\log p, \pi_0, L, \tau^{\text{rel}}, J, K, M)$}{:}{}
+
+\nl \Fn{}{
+    \nl sample $\theta^{(0)} \sim \pi_0$ \;
+    \nl $\theta^{(0:L)}, \nabla \log p(\theta^{(0:L)}) = \text{L-BFGS}(\log p, \theta^{(0)}, J, \tau^{\text{rel}}, L^{\text{max}})$\;
+    \nl $\alpha^{(1:L)}, \beta^{(1:L)}, \gamma^{(1:L)} = \text{IH-FACTORS}(\theta^{(0:L)}, \nabla \log p(\theta^{(0:L)}), J)$\;
+    \nl \For{$l \in 1:L$ \textbf{in parallel } }{
+        \nl $\phi^{(l,1:K)}, \log q(\phi^{(l,1:K)}) = \text{BFGS-SAMPLE}(\theta^{(l)}, \nabla \log p(\theta^{(l)}), \alpha^{(l)}, \beta^{(l)}, \gamma^{(l)}, K)$\;
+        \nl \For{$k \in 1:K \text{ }$}{ 
+            \nl eval $\log p(\phi^{(l,k)})$\;
+        }
+        \nl $\lambda^{(l)} = \text{ELBO}(\log p(\phi^{(l,1:K)}), \log q(\phi^{(l,1:K)}))$\;
+    }
+    \nl $l^* = \arg \max_l \lambda^{(l)}$\;
+    \nl $\psi^{(1:M)}, \log q(\psi^{(1:M)}) = \text{BFGS-SAMPLE}(\theta^{(l^*)}, \nabla \log p(\theta^{(l^*)}), \alpha^{(l^*)}, \beta^{(l^*)}, \gamma^{(l^*)}, M)$\;
+}
+\end{algorithm}
+
+
+\pagebreak
+\SetKwProg{Fn}{Multi-Path Pathfinder$(\log p, \pi_0, L, \tau^{\text{rel}}, J, K, M, I, R)$}{:}{}
+\begin{algorithm}
+\DontPrintSemicolon
+\SetAlgoLined
+\LinesNotNumbered
+\caption{Multi-path Pathfinder}
+\KwIn{}
+    \indentinput $\log p$: log target density function\;
+    \indentinput $\pi_0$: initial distribution\;
+    \indentinput $L^{\text{max}}$: max number of L-BFGS iterations\;
+    \indentinput $\tau^{\text{rel}}$: relative tolerance for convergence of L-BFGS\;
+    \indentinput $J$: history size for L-BFGS and inverse Hessian approximation\;
+    \indentinput $K$: number of Monte Carlo draws to evaluate ELBO\;
+    \indentinput $M$: number of draws returned by each Pathfinder\;
+    \indentinput $I$: number of independent Pathfinders\;
+    \indentinput $R$: number of draws returned by importance sampling\;
+
+\KwOut{}{
+    \indentinput $\psi^{(1)},\ldots,\psi^{(M)}$: draws from the approximate posterior distribution\;
+}
+\SetKwProg{Proc}{Pathfinder$(\log p, \pi_0, L, \tau^{\text{rel}}, J, K, M)$}{:}{}
+
+\nl \Fn{}{
+    \nl \For{$i \in 1:I$ \textbf{in parallel } }{
+        \nl $\phi^{(i, 1:M)}, \log q(\phi^{(i, 1:M)}) = \text{Pathfinder}(\log p, \pi_0, L, \tau^{\text{rel}}, J, K, M)$\;
+        \nl eval $\log p(\phi^{(i,1)}), ..., \log p(\phi^{(i,M)})$\;
+    }
+    \nl $\psi^{(1)},\ldots,\psi^{(M)} = \text{IMPORTANCE-SAMPLE}(\phi^{(1:I, 1:M)}, \log p(\phi^{(1:I, 1:M)}), \log q(\phi^{(1:I, 1:M)}), R)$\;
+}
+\end{algorithm}
+\end{document}
