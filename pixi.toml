@@ -40,3 +40,4 @@ plotly = ">=6.0.1,<7"
 # jax = "*" # removed this bc it was causing issues with jax.numpy
 numpyro = { version = "*", extras = ["cpu"] }
 pymc-extras = ">=0.2.3, <0.3"
+kaleido = ">=0.2.1, <0.3"
