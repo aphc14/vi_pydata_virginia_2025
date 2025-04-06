@@ -245,7 +245,11 @@ S_i^{(l)\top} \cdot Z_j^{(l)} & \text{if } ~ i \leq j \quad \text{\# upper-trian
 $$
 ```
 
++++
+
 Unlike ADVI, where the covariance matrix is either diagonal (mean-field ADVI) or full rank (full-rank ADVI), Pathfinder uses a low-rank plus diagonal factorization of the inverse Hessian factor, where a larger $J$ results in a higher-rank estimate of the covariance matrix. From the $\text{IH-Factors}$, $\alpha\text{-recover}$ and $\beta\gamma\text{-recover}$ functions, we can see that the inverse Hessian approximation $\Sigma^{(l)}$ encodes the $J$-previous local curvature information collected along the optimization trajectory.
+
++++
 
 ```{note} Why not use the inverse Hessian approximations from L-BFGS?
 :class: dropdown
@@ -269,6 +273,8 @@ $$
 \phi^{(l, 1:K)}, ~ \log q(\phi^{(l,1:K)}) = \text{BFGS-Sample}(\theta^{(l)}, g^{(l)}, \alpha^{(l)}, \beta^{(l)}, \gamma^{(l)}, K)
 \end{equation}
 $$
+
++++
 
 ```{note} Details on $\text{BFGS-Sample}$
 :class: dropdown
@@ -352,6 +358,7 @@ $$
 
 where $\psi^{(m)} \in \Theta$, for $m \in 1:M$.
 
++++
 
 ### Single-path Pathfinder algorithm
 
@@ -436,17 +443,19 @@ $$
 \quad \textbf{end} \\
 \quad \widetilde{\theta}^{(1)},\ldots,\widetilde{\theta}^{(R)} = \texttt{IM-Sampling}(\psi^{(1:I, 1:M)}, \log f(\psi^{(1:I, 1:M)}), \log q(\psi^{(1:I, 1:M)}), R) \\
 \textbf{return } ~ \widetilde{\theta}^{(1:R)} \\
+\\
+\text{where $\widetilde{\theta}^{(r)} \in \Theta$, for $r \in 1:R$.}
 \end{array}
 \end{equation*}
 $$
-
-where $\widetilde{\theta}^{(r)} \in \Theta$, for $r \in 1:R$.
 
 +++
 
 ### Importance sampling
 
 We use importance sampling to select the final set of draws from all the multiple runs of the Single-path algorithm, allowing us to capture multimodality, and other non-normal characteristics of the target posterior distribution.
+
++++
 
 $$
 \begin{equation*}
@@ -466,12 +475,15 @@ $$
 \quad w^{(1:S)} = \text{PSIS}(r^{(1:S)}) \\
 \quad \widetilde{\theta}^{(1:R)} = \text{ randomly select from } \psi^{(1:I, 1:M)} \text{ with probabilities} \\
 \quad \text{proportionate to } w^{(1:S)} \\
-\textbf{return } ~ \widetilde{\theta}^{(1:R)}
+\textbf{return } ~ \widetilde{\theta}^{(1:R)} \\
+\\
+\text{where $\widetilde{\theta}^{(r)} \in \Theta$, and $\text{PSIS}$ is the Pareto-Smoothed Importance} \\
+\text{Sampling weights from [ref paper].}
 \end{array}
 \end{equation*}
 $$
 
-where $\widetilde{\theta}^{(r)} \in \Theta$, and $\text{PSIS}$ is the Pareto-Smoothed Importance Sampling weights from [ref paper].
++++
 
 The importance sampling step used in [ref paper] used random selection with replacement. However, within the PyMC implementation, the default implementation uses without replacement. This is because we have determined that sampling without replacement provides more stable results that are generally closer to approximation using NUTS.
 
